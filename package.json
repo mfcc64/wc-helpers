@@ -1,0 +1,24 @@
+{
+    "name": "wc-helpers",
+    "version": "1.0.0",
+    "description": "helpers for web components",
+    "main": "wc-helpers-main.mjs",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "rollup -c",
+        "prepare": "npm run build"
+    },
+    "keywords": [
+        "custom-elements",
+        "web-components"
+    ],
+    "author": "Muhammad Faiz <mfcc64@gmail.com>",
+    "license": "MIT",
+    "devDependencies": {
+        "@rollup/plugin-terser": "^0.4.4",
+        "rollup": "^4.18.1"
+    },
+    "repository": "github:mfcc64/wc-helpers",
+    "homepage": "https://github.com/mfcc64/wc-helpers#readme",
+    "bugs": "https://github.com/mfcc64/wc-helpers/issues"
+}
