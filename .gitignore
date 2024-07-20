@@ -2,3 +2,5 @@
 /package-lock.json
 /wc-helpers-bundle.min.mjs
 /wc-helpers-bundle.min.mjs.map
+*.tgz
+*.tar.gz
