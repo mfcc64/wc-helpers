@@ -4,7 +4,7 @@ import {Anonymous} from "./modules/anonymous.mjs";
 import {Attribute} from "./modules/state.mjs";
 import {Shadow} from "./modules/shadow.mjs";
 
-export const version = "1.0.0";
+export const version = "1.0.1";
 export const WCHelpers = once(Base => chain(Anonymous, Attribute, Shadow, Base));
 
 export * from "./modules/utils.mjs";
