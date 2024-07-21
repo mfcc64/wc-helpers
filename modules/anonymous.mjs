@@ -37,7 +37,5 @@ export const Anonymous = once(Base => class _Anonymous extends Base {
             customElements.define(name, Target);
             return name;
         }
-
-        return defineRandom(Target[anonymousBase], Target);
     }
 });
