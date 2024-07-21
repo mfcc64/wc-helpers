@@ -282,11 +282,11 @@ console.log(Anonymous(Attribute(Shadow(HTMLElement))) == chain(Anonymous, Attrib
 
 #### `htmlCache`
 
-Get `HTMLTemplateElement` instance from `html` tag. Cached using `once`.
+Get `HTMLTemplateElement` instance from `html` tag.
 
 #### `cssCache`
 
-Get `CSSStyleSheet` instance from `css` tag. Cached using `once`.
+Get `CSSStyleSheet` instance from `css` tag.
 
 #### `cssDisplayBlock`
 

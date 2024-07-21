@@ -23,6 +23,7 @@ class DelayLiteral {
     constructor(type, ...args) {
         this.type = type;
         this.args = args;
+        this.result = null;
     }
 
     toString() {
@@ -39,28 +40,26 @@ export const cssDisplayInlineBlock  = css`:host { display: inline-block; }`;
 export const cssDisplayNone         = css`:host { display: none; }`;
 export const cssDisplayContents     = css`:host { display: contents; }`;
 
-export const htmlCache = once(src => {
-    if (src instanceof HTMLTemplateElement)
-        return src;
-
+const htmlCacheInternal = (src) => {
     if (src.type !== "html")
         throw Error("invalid html type");
 
-    const template = document.createElement("template");
-    template.innerHTML = src;
-    return template;
-});
+    if (!src.result)
+        src.result = document.createElement("template"), src.result.innerHTML = src;
 
-export const cssCache = once(src => {
-    if (src instanceof CSSStyleSheet)
-        return src;
+    return src.result;
+};
 
+const cssCacheInternal = (src) => {
     if (src.type !== "css")
         throw Error("invalid css type");
 
-    const css = new CSSStyleSheet();
-    css.replaceSync(src);
-    return css;
-});
+    if (!src.result)
+        src.result = new CSSStyleSheet, src.result.replaceSync(src);
 
+    return src.result;
+};
+
+export const htmlCache = (src) => src instanceof HTMLTemplateElement ? src : htmlCacheInternal(src);
+export const cssCache = (src) => src instanceof CSSStyleSheet ? src : cssCacheInternal(src);
 export const htmlFragment = (src) => document.importNode(htmlCache(src).content, true);
