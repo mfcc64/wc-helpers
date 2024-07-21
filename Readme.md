@@ -326,7 +326,8 @@ document.body.appendChild(_.htmlFragment(templateA));
 
 `Anonymous`, `Attribute`, and `Shadow` mixin chained together.
 
-Here is an example adopted from [react.dev](https://react.dev/learn/scaling-up-with-reducer-and-context).
+Here is an example adopted from [react.dev](https://react.dev/learn/scaling-up-with-reducer-and-context),
+with approximately 50% reduction of lines.
 
 ```html
 <!DOCTYPE html>
@@ -340,22 +341,20 @@ import * as _ from "https://cdn.jsdelivr.net/npm/wc-helpers@1/wc-helpers.mjs";
 
 class TaskItem extends _.WCHelpers(HTMLElement) {
     static observedAttributes = [ "data-done" ];
-    static [_.shadowCSS] = [ _.cssDisplayContents ];
+    static [_.shadowCSS] = [ _.css `:host { display: list-item; }` ];
     static [_.shadowHTML] = _.html
-`<li>
-    <input type="checkbox" id="checkbox"/>
-    <span id="mode">
-        <span id="editor">
-            <input type="text" id="input"/>
-            <button id="save">Save</button>
-        </span>
-        <span id="viewer">
-            <slot></slot>
-            <button id="edit">Edit</button>
-        </span>
+`<input type="checkbox" id="checkbox"/>
+<span id="mode">
+    <span id="editor">
+        <input type="text" id="input"/>
+        <button id="save">Save</button>
     </span>
-    <button id="delete">Delete</button>
-</li>`;
+    <span id="viewer">
+        <slot></slot>
+        <button id="edit">Edit</button>
+    </span>
+</span>
+<button id="delete">Delete</button>`;
 
     constructor() {
         super();
