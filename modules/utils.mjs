@@ -63,3 +63,62 @@ const cssCacheInternal = (src) => {
 export const htmlCache = (src) => src instanceof HTMLTemplateElement ? src : htmlCacheInternal(src);
 export const cssCache = (src) => src instanceof CSSStyleSheet ? src : cssCacheInternal(src);
 export const htmlFragment = (src) => document.importNode(htmlCache(src).content, true);
+
+let globalCSS = null;
+
+export function getGlobalCSS() {
+    return globalCSS ?? updateGlobalCSS();
+}
+
+export function updateGlobalCSS() {
+    if (!globalCSS)
+        globalCSS = new CSSStyleSheet();
+
+    const rules = [];
+    const css = document.styleSheets;
+
+    for (let k = 0, len = css.length; k < len; k++) {
+        try {
+            if (!css[k].ownerNode?.hasAttribute("data-wc-global-css"))
+                continue;
+
+            const nested = [];
+            cssAppendRules(css[k], nested);
+            let str = nested.join("\n");
+
+            if(css[k].ownerNode.media)
+                str = `@media ${css[k].ownerNode.media} {\n${str}\n}`;
+
+            rules.push(str);
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    globalCSS.replaceSync(rules.join("\n"));
+    return globalCSS;
+}
+
+function cssAppendRules(css, rules) {
+    if (!css?.cssRules)
+        return;
+
+    for (const rule of css.cssRules) {
+        if (!(rule instanceof CSSImportRule)) {
+            rules.push(rule.cssText);
+            continue;
+        }
+
+        const nested = [];
+        cssAppendRules(rule.styleSheet, nested);
+        let str = nested.join("\n");
+
+        if (rule.media.mediaText)
+            str = `@media ${rule.media.mediaText} {\n${str}\n}`;
+
+        if (rule.layerName != null)
+            str = `@layer ${rule.layerName} {\n${str}\n}`;
+
+        rules.push(str);
+    }
+}
