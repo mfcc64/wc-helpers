@@ -19,20 +19,41 @@ export const chain = (...args) => {
     return val;
 };
 
-class DelayLiteral {
-    constructor(type, ...args) {
-        this.type = type;
-        this.args = args;
-        this.result = null;
-    }
+const TrustedHTML = globalThis.TrustedHTML || class {
+    constructor(str) { this.str = str; }
+    toString() { return this.str; }
+};
 
-    toString() {
-        return String.raw(...this.args);
-    }
+let setHTMLInternal;
+if (globalThis.trustedTypes) {
+    const policy = trustedTypes.createPolicy("wc-helpers", { createHTML: s => s });
+    setHTMLInternal = str => policy.createHTML(str);
+} else {
+    setHTMLInternal = str => new TrustedHTML(str);
 }
 
-export const html   = (strings, ...args) => new DelayLiteral("html", {raw: strings}, ...args);
-export const css    = (strings, ...args) => new DelayLiteral("css", {raw: strings}, ...args);
+const htmlRegexpInternal = /[&<=>'"]/g;
+const htmlReplaceInternal = t => `&#${t.charCodeAt(0)};`;
+export const html = (strings, ...args) => {
+    for (let k = 0, len = args.length; k < len; k++) {
+        if (args[k] instanceof TrustedHTML)
+            continue;
+
+        if (args[k] instanceof Array)
+            args[k] = args[k].map(v => v instanceof TrustedHTML ? v : String(v).replace(htmlRegexpInternal, htmlReplaceInternal)).join("");
+        else
+            args[k] = String(args[k]).replace(htmlRegexpInternal, htmlReplaceInternal);
+    }
+    return setHTMLInternal(String.raw({raw: strings}, ...args));
+};
+export const htmlUnsafeString = (str) => setHTMLInternal(String(str));
+
+class CSSLiteralInternal {
+    constructor(str) { this.str = str; }
+    toString() { return this.str; }
+}
+
+export const css = (strings, ...args) => new CSSLiteralInternal(String.raw({raw: strings}, ...args));
 
 export const cssDisplayBlock        = css`:host { display: block; }`;
 export const cssDisplayInline       = css`:host { display: inline; }`;
@@ -40,25 +61,23 @@ export const cssDisplayInlineBlock  = css`:host { display: inline-block; }`;
 export const cssDisplayNone         = css`:host { display: none; }`;
 export const cssDisplayContents     = css`:host { display: contents; }`;
 
-const htmlCacheInternal = (src) => {
-    if (src.type !== "html")
+const htmlCacheInternal = once((src) => {
+    if (!(src instanceof TrustedHTML))
         throw Error("invalid html type");
 
-    if (!src.result)
-        src.result = document.createElement("template"), src.result.innerHTML = src;
+    const dst = document.createElement("template");
+    dst.innerHTML = src;
+    return dst;
+});
 
-    return src.result;
-};
-
-const cssCacheInternal = (src) => {
-    if (src.type !== "css")
+const cssCacheInternal = once((src) => {
+    if (!(src instanceof CSSLiteralInternal))
         throw Error("invalid css type");
 
-    if (!src.result)
-        src.result = new CSSStyleSheet, src.result.replaceSync(src);
-
-    return src.result;
-};
+    const dst = new CSSStyleSheet;
+    dst.replaceSync(src);
+    return dst;
+});
 
 export const htmlCache = (src) => src instanceof HTMLTemplateElement ? src : htmlCacheInternal(src);
 export const cssCache = (src) => src instanceof CSSStyleSheet ? src : cssCacheInternal(src);
