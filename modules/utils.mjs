@@ -83,15 +83,15 @@ export const htmlCache = (src) => src instanceof HTMLTemplateElement ? src : htm
 export const cssCache = (src) => src instanceof CSSStyleSheet ? src : cssCacheInternal(src);
 export const htmlFragment = (src) => document.importNode(htmlCache(src).content, true);
 
-let globalCSS = null;
+const globalCSS = Symbol.for("wc-helpers/global-css");
 
 export function getGlobalCSS() {
-    return globalCSS ?? updateGlobalCSS();
+    return globalThis[globalCSS] ?? updateGlobalCSS();
 }
 
 export function updateGlobalCSS() {
-    if (!globalCSS)
-        globalCSS = new CSSStyleSheet();
+    if (!globalThis[globalCSS])
+        globalThis[globalCSS] = new CSSStyleSheet();
 
     const rules = [];
     const css = document.styleSheets;
@@ -114,8 +114,8 @@ export function updateGlobalCSS() {
         }
     }
 
-    globalCSS.replaceSync(rules.join("\n"));
-    return globalCSS;
+    globalThis[globalCSS].replaceSync(rules.join("\n"));
+    return globalThis[globalCSS];
 }
 
 function cssAppendRules(css, rules) {
