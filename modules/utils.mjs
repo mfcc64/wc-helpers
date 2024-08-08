@@ -1,5 +1,5 @@
 
-export const abstract = Symbol("abstract");
+export const abstract = Symbol.for("wc-helpers/abstract");
 
 export const once = (def) => {
     const map = new WeakMap();

@@ -71,7 +71,7 @@ export class State {
     #listeners = [];
 }
 
-export const attributeState = Symbol("attributeState");
+export const attributeState = Symbol.for("wc-helpers/attribute-state");
 
 export const Attribute = once(Base => class _Attribute extends Base {
     static [abstract];

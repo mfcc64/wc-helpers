@@ -1,11 +1,11 @@
 
 import {once, abstract, html, htmlFragment, cssCache} from "./utils.mjs";
 
-export const shadowOptions  = Symbol("shadowOptions");
-export const shadowHTML     = Symbol("shadowHTML");
-export const shadowCSS      = Symbol("shadowCSS");
-export const shadowElements = Symbol("shadowElements");
-export const shadowRoot     = Symbol("shadowRoot");
+export const shadowOptions  = Symbol.for("wc-helpers/shadow-options");
+export const shadowHTML     = Symbol.for("wc-helpers/shadow-html");
+export const shadowCSS      = Symbol.for("wc-helpers/shadow-css");
+export const shadowElements = Symbol.for("wc-helpers/shadow-elements");
+export const shadowRoot     = Symbol.for("wc-helpers/shadow-root");
 
 export const Shadow = once(Base => class _Shadow extends Base {
     static [abstract];

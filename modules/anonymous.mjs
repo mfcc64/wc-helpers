@@ -1,7 +1,7 @@
 
 import {once, abstract} from "./utils.mjs";
 
-export const anonymousBase = Symbol("anonymousBase");
+export const anonymousBase = Symbol.for("wc-helpers/anonymous-base");
 
 export const Anonymous = once(Base => class _Anonymous extends Base {
     static [abstract];
