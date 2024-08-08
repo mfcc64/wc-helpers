@@ -1,6 +1,6 @@
-# `wc-helpers`
+# `wc-helpers v2`
 
-`wc-helpers` help you create your custom elements.
+`wc-helpers v2` help you create your custom elements.
 
 ## Install
 
@@ -21,11 +21,11 @@ import * as _ from "wc-helpers";
 
 ```js
 // jsdlivr
-import * as _ from "https://cdn.jsdelivr.net/npm/wc-helpers@1/wc-helpers.mjs";
+import * as _ from "https://cdn.jsdelivr.net/npm/wc-helpers@2/wc-helpers.mjs";
 // unpkg
-import * as _ from "https://unpkg.com/wc-helpers@1/wc-helpers.mjs";
+import * as _ from "https://unpkg.com/wc-helpers@2/wc-helpers.mjs";
 // relative CDN
-import * as _ from "../wc-helpers@1/wc-helpers.mjs";
+import * as _ from "../wc-helpers@2/wc-helpers.mjs";
 ```
 
 ## API
@@ -142,6 +142,7 @@ Set current value of state and call listeners.
 #### `State.prototype.cset(value)`
 
 Set current value of state. It doesn't call listeners when `value` equal to `oldValue`.
+It returns `true` when listeners are called, otherwise `false`.
 
 #### `State function listener(value, oldValue) callback`
 
@@ -272,13 +273,16 @@ console.log(Anonymous(Attribute(Shadow(HTMLElement))) == chain(Anonymous, Attrib
 
 #### `html`
 
-`html` tag wraps string literals into object. It delays string interpolation until
-`htmlCache` is called.
+`html` tag wraps string literals into object. It escape `&<>'"=` characters from literals' arguments
+unless that argument is also another `html` tag or result of `htmlUnsafeString` function. When an
+argument is `Array`, its item will be evaluated according to the escape rules and they will be concancenated.
+
+#### `htmlUnsafeString`
+`htmlUnsafeString` allows string to be included in `html` tag argument without escaping.
 
 #### `css`
 
-`css` tag wraps string literals into object. It delays string interpolation until
-`cssCache` is called.
+`css` tag wraps string literals into object. No escaping performed.
 
 #### `htmlCache`
 
@@ -315,11 +319,62 @@ class ElementA extends _.chain(_.Anonymous, _.Shadow, HTMLElement) {
     static [_.shadowCSS] = [ _.cssDisplayBlock, _.css`:host { color: #00ff00; }` ];
 }
 
-const htmlA = _.html `<${ElementA}>Hello World.</${ElementA}>`; // it doesn't register ElementA
-customElements.define("element-a", ElementA); // it doesn't throw because ElementA hasn't been registered.
+const message = "<Hello World> 'Hello World' \"Hello World\" &=";
+const htmlA = _.html `<${ElementA}>${message}</${ElementA}>`;
 const templateA = _.htmlCache(htmlA);
 document.body.appendChild(_.htmlFragment(htmlA));
 document.body.appendChild(_.htmlFragment(templateA));
+document.body.insertAdjacentHTML("beforeend", htmlA);
+```
+
+#### `getGlobalCSS`
+
+`getGlobalCSS` gets constructed `CSSStyleSheet` from `link` and `style` elements which have
+`data-wc-global-css` attribute.
+
+#### `updateGlobalCSS`
+
+`updateGlobalCSS` update the constructed `CSSStyleSheet` for `getGlobalCSS` dynamically.
+
+Example:
+
+```html
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Global CSS</title>
+        <script type="importmap">{
+            "imports": {
+                "wc-helpers": "https://cdn.jsdelivr.net/npm/wc-helpers@2/wc-helpers.mjs"
+            }
+        }</script>
+        <script type="module">
+            import { getGlobalCSS, updateGlobalCSS, WCHelpers, shadowCSS, shadowHTML, html, css } from "wc-helpers";
+
+            class MyElement extends WCHelpers(HTMLElement) {
+                static [shadowCSS] = [ getGlobalCSS() ];
+                static [shadowHTML] = html`<p>Inside shadow DOM</p>`;
+            }
+            customElements.define("my-element", MyElement);
+
+            setTimeout(() => {
+                const style = document.createElement("style");
+                style.textContent = css`p { color: green; }`;
+                style.setAttribute("data-wc-global-css", "");
+                style.addEventListener("load", () => updateGlobalCSS());
+                document.head.appendChild(style);
+            }, 3000);
+
+        </script>
+        <style data-wc-global-css>
+            p { color: red; }
+        </style>
+    </head>
+    <body>
+        <p>Outside shadow DOM</p>
+        <my-element></my-element>
+    </body>
+</html>
 ```
 
 ### `WCHelpers`
@@ -334,23 +389,30 @@ with approximately 50% reduction of lines.
 <html>
     <head>
         <title>WCHelpers</title>
+        <script type="importmap">{
+            "imports": {
+                "wc-helpers": "https://cdn.jsdelivr.net/npm/wc-helpers@2/wc-helpers.mjs"
+            }
+        }</script>
         <script type="module">
 // start
-// example using CDN
-import * as _ from "https://cdn.jsdelivr.net/npm/wc-helpers@1/wc-helpers.mjs";
+// example using importmap
+import * as _ from "wc-helpers";
+
+const { html, css } = _;
 
 class TaskItem extends _.WCHelpers(HTMLElement) {
     static observedAttributes = [ "data-done" ];
-    static [_.shadowCSS] = [ _.css `:host { display: list-item; }` ];
-    static [_.shadowHTML] = _.html
-`<input type="checkbox" id="checkbox"/>
+    static [_.shadowCSS] = [ css`:host { display: list-item; }`, _.getGlobalCSS() ];
+    static [_.shadowHTML] = html`
+<input type="checkbox" id="checkbox"/>
 <span id="mode">
     <span id="editor">
         <input type="text" id="input"/>
         <button id="save">Save</button>
     </span>
     <span id="viewer">
-        <slot></slot>
+        <span part="content"><slot></slot></span>
         <button id="edit">Edit</button>
     </span>
 </span>
@@ -358,11 +420,13 @@ class TaskItem extends _.WCHelpers(HTMLElement) {
 
     constructor() {
         super();
+        const internals = this.attachInternals();
+        internals.role = "listitem";
+
         const id = this[_.shadowElements], at = this[_.attributeState];
 
         at["data-done"].listen((value) => id.checkbox.checked = value != null);
-        id.checkbox.addEventListener("change", () => void(id.checkbox.checked ?
-            this.setAttribute("data-done", "") : this.removeAttribute("data-done")));
+        id.checkbox.addEventListener("change", () => void(this.toggleAttribute("data-done", id.checkbox.checked)));
 
         const _edited = new _.State(false);
 
@@ -382,9 +446,9 @@ customElements.define("task-item", TaskItem);
 
 class MyTask extends _.WCHelpers(HTMLElement) {
     static observedAttributes = [ "data-title" ];
-    static [_.shadowCSS] = [ _.cssDisplayBlock ];
-    static [_.shadowHTML] = _.html
-`<h3 id="title"></h3>
+    static [_.shadowCSS] = [ _.cssDisplayBlock, _.getGlobalCSS() ];
+    static [_.shadowHTML] = html`
+<h3 id="title"></h3>
 <input type="text" placeholder="Add task" id="input"/>
 <button id="add">Add</button>
 <ul><slot></slot></ul>`;
@@ -395,9 +459,7 @@ class MyTask extends _.WCHelpers(HTMLElement) {
         const at = this[_.attributeState];
         at["data-title"].listen((value) => id.title.textContent = value ?? "");
         id.add.addEventListener("click", () => {
-            const item = new TaskItem;
-            item.textContent = id.input.value;
-            this.appendChild(item);
+            this.insertAdjacentHTML("beforeend", html`<task-item>${id.input.value}</task-item>`);
             id.input.value = "";
         });
     }
@@ -406,6 +468,14 @@ customElements.define("my-task", MyTask);
 
 // end
         </script>
+        <style>
+            task-item[data-done]::part(content) {
+                text-decoration: line-through;
+            }
+        </style>
+        <style data-wc-global-css>
+            ul, ol { padding-inline-start: 25px; }
+        </style>
     <head>
     <body>
         <my-task data-title="Day off in Kyoto">
