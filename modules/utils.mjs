@@ -44,9 +44,11 @@ export const html = (strings, ...args) => {
 };
 export const htmlUnsafeString = (str) => setHTMLInternal(String(str));
 
+const cssInternalTag = Symbol.for("wc-helpers/css-tag");
 class CSSLiteralInternal {
     constructor(str) { this.str = str; }
     toString() { return this.str; }
+    [cssInternalTag] = true;
 }
 
 export const css = (strings, ...args) => new CSSLiteralInternal(String.raw({raw: strings}, ...args));
@@ -67,7 +69,7 @@ const htmlCacheInternal = once((src) => {
 });
 
 const cssCacheInternal = once((src) => {
-    if (!(src instanceof CSSLiteralInternal))
+    if (!src[cssInternalTag])
         throw Error("invalid css type");
 
     const dst = new CSSStyleSheet;
