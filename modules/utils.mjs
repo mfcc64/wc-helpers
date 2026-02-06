@@ -51,6 +51,7 @@ class CSSLiteralInternal {
     [cssInternalTag] = true;
 }
 
+/* @__NO_SIDE_EFFECTS__ */
 export const css = (strings, ...args) => new CSSLiteralInternal(String.raw({raw: strings}, ...args));
 
 export const cssDisplayBlock        = css`:host { display: block; }`;
