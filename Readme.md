@@ -330,7 +330,7 @@ document.body.insertAdjacentHTML("beforeend", htmlA);
 #### `getGlobalCSS`
 
 `getGlobalCSS` gets constructed `CSSStyleSheet` from `link` and `style` elements which have
-`data-wc-global-css` attribute.
+`data-wc-global-css` or `wc-global-css` attribute.
 
 #### `updateGlobalCSS`
 

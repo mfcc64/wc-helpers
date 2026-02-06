@@ -96,14 +96,15 @@ export function updateGlobalCSS() {
 
     for (let k = 0, len = css.length; k < len; k++) {
         try {
-            if (!css[k].ownerNode?.hasAttribute("data-wc-global-css"))
+            const node = css[k].ownerNode;
+            if (!node || !(node.hasAttribute("data-wc-global-css") || node.hasAttribute("wc-global-css")))
                 continue;
 
             const nested = [];
             cssAppendRules(css[k], nested);
             let str = nested.join("\n");
 
-            if(css[k].ownerNode.media)
+            if(node.media)
                 str = `@media ${css[k].ownerNode.media} {\n${str}\n}`;
 
             rules.push(str);
